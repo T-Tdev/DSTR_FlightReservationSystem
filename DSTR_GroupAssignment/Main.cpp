@@ -116,7 +116,7 @@ void runLinkedListBasedSystem() {
     int choice;
     do {
         cout << "\n=== LINKED-LIST SYSTEM ===\n";
-        cout << "1. Delete Passenger\n";
+        cout << "1. Cancellation\n";
         cout << "2. Print Manifest\n";
         cout << "0. Back\nChoice: ";
         cin >> choice;
@@ -126,12 +126,12 @@ void runLinkedListBasedSystem() {
             cout << "Enter Passenger ID: ";
             cin >> id;
             if (deletePassenger(head, id))
-                cout << "Passenger deleted successfully.\n";
+                cout << "Successfully cancelled.\n";
             else
                 cout << "Passenger not found.\n";
         }
         else if (choice == 2) {
-            cout << "\nPassenger Manifest (up to 180 random consecutive entries):\n";
+            cout << "\nPassenger Manifest:\n";
             printPassengers(head);
         }
     } while (choice != 0);
@@ -237,7 +237,7 @@ void runArrayBasedSystem() {
     int choice;
     do {
         cout << "\n=== ARRAY-BASED SYSTEM ===\n";
-        cout << "1. Delete Passenger\n";
+        cout << "1. Cancellation\n";
         cout << "2. Print Manifest\n";
         cout << "0. Back\nChoice: ";
         cin >> choice;
@@ -247,12 +247,12 @@ void runArrayBasedSystem() {
             cout << "Enter Passenger ID: ";
             cin >> id;
             if (deletePassenger(passengers, count, id))
-                cout << "Passenger deleted successfully.\n";
+                cout << "Successfully cancelled.\n";
             else
                 cout << "Passenger not found.\n";
         }
         else if (choice == 2) {
-            cout << "\nPassenger Manifest (up to 180 random consecutive entries):\n";
+            cout << "\nPassenger Manifest:\n";
             printPassengers(passengers, count);
         }
     } while (choice != 0);

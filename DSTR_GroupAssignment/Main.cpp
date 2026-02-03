@@ -81,24 +81,61 @@ void loadFromCSV_Linked(const char* filename, Node*& head) {
     file.close();
 }
 
-Passenger getPassengerInput() {
-    Passenger p;
-    cout << "Enter Passenger ID: "; cin >> p.passengerID;
-    cout << "Enter Name: "; cin.ignore(); cin.getline(p.name, 50);
-    cout << "Enter Seat Row: "; cin >> p.seatRow;
-    cout << "Enter Seat Column: "; cin >> p.seatCol;
-    cout << "Enter Class: "; cin.ignore(); cin.getline(p.seatClass, 15);
-    return p;
+// Helper to finalize passenger details once seat is verified
+void finalizeBooking(Passenger &p, int newID, int row, char col) {
+    p.passengerID = newID;
+    p.seatRow = row;
+    p.seatCol = col;
+
+    cout << "Seat available! Assigned ID: " << p.passengerID << endl;
+    cout << "Enter Passenger Name: ";
+    cin.ignore();
+    cin.getline(p.name, 50);
+
+    int classChoice;
+    cout << "Select Class (1. Economy, 2. Business): ";
+    while (!(cin >> classChoice) || (classChoice < 1 || classChoice > 2)) {
+        cout << "Invalid choice. Please enter 1 or 2: ";
+        cin.clear();
+        cin.ignore(100, '\n');
+    }
+    
+    if (classChoice == 1) strcpy(p.seatClass, "Economy");
+    else strcpy(p.seatClass, "Business");
+
+    cout << "Reservation completed successfully.\n";
 }
 
-bool insertPassenger_Linked(Node*& head, Passenger p) {
-    Node* newNode = new Node;
-    if (!newNode) return false; // Memory allocation failed
+void insertPassenger_Linked(Node*& head) {
+    int row;
+    char col;
 
-    newNode->data = p;
-    newNode->next = head; // Insert at the beginning (O(1))
+    cout << "Enter Seat Row (1-30): "; cin >> row;
+    if (row < 1 || row > 30) { cout << "Invalid row. Back to menu.\n"; return; }
+    
+    cout << "Enter Seat Column (A-G): "; cin >> col;
+    col = toupper(col);
+    if (col < 'A' || col > 'G') { cout << "Invalid column. Back to menu.\n"; return; }
+
+    // 1. Traverse to verify seat status and find max ID
+    int maxID = 0;
+    Node* temp = head;
+    while (temp != nullptr) {
+        if (temp->data.seatRow == row && temp->data.seatCol == col) {
+            cout << "Error: Seat " << row << col << " is already reserved!\n";
+            return;
+        }
+        if (temp->data.passengerID > maxID) maxID = temp->data.passengerID;
+        temp = temp->next;
+    }
+
+    // 2. Seat is free: Allocate new node and finalize booking
+    Node* newNode = new Node;
+    finalizeBooking(newNode->data, maxID + 1, row, col);
+
+    // 3. Link the new node to the list (O(1) insertion at head)
+    newNode->next = head;
     head = newNode;
-    return true;
 }
 
 bool deletePassenger(Node*& head, int id) {
@@ -136,36 +173,37 @@ void runLinkedListBasedSystem() {
     int choice;
     do {
         cout << "\n=== LINKED-LIST SYSTEM ===\n";
-        cout << "1. Cancellation\n";
+        cout << "1. Delete Passenger\n";
         cout << "2. Print Manifest\n";
-        cout << "3. Booking\n";
+        cout << "3. Reserve Seat (New)\n"; // NEW OPTION
         cout << "0. Back\nChoice: ";
         cin >> choice;
 
-        if (choice == 1) {
-            int id;
-            cout << "Enter Passenger ID: ";
-            cin >> id;
-            if (deletePassenger(head, id))
-                cout << "Successfully cancelled.\n";
-            else
-                cout << "Passenger not found.\n";
-        }
-        else if (choice == 2) {
-            cout << "\nPassenger Manifest:\n";
-            printPassengers(head);
-        }
-        else if (choice == 3){
-
-            Passenger p = getPassengerInput();
-
-            if(insertPassenger_Linked(head, p))
-            {
-                cout<< "Reservation successful (Linked List). \n";
+        switch (choice) {
+            case 1: {
+                int id;
+                cout << "Enter Passenger ID to delete: ";
+                cin >> id;
+                if (deletePassenger(head, id))
+                    cout << "Passenger deleted successfully.\n";
+                else
+                    cout << "Passenger not found.\n";
+                break;
             }
+            case 2:
+                cout << "\nPassenger Manifest:\n";
+                printPassengers(head);
+                break;
+            case 3:
+                // Calls the enhanced insertion logic
+                insertPassenger_Linked(head);
+                break;
+            case 0: break;
+            default: cout << "Invalid choice.\n";
         }
     } while (choice != 0);
 
+    // Clean up memory before exiting back to main menu
     while (head) {
         Node* temp = head;
         head = head->next;
@@ -232,15 +270,36 @@ int loadFromCSV_Array(const char* filename, Passenger arr[], int& count) {
     return count;
 }
 
-bool insertPassenger_Array(Passenger arr[], int& count, Passenger p) {
+void insertPassenger_Array(Passenger arr[], int& count) {
     if (count >= MAX_PASSENGERS) {
-        cout << "Error: Flight is full (Array Capacity Reached)." << endl;
-        return false;
+        cout << "Error: Flight is at full capacity.\n";
+        return;
     }
 
-    arr[count] = p; // Insert at the end of current count (O(1))
+    int row;
+    char col;
+
+    // 1. Input Row/Col with validation (1-30, A-G)
+    cout << "Enter Seat Row (1-30): "; cin >> row;
+    if (row < 1 || row > 30) { cout << "Invalid row. Back to menu.\n"; return; }
+    
+    cout << "Enter Seat Column (A-G): "; cin >> col;
+    col = toupper(col);
+    if (col < 'A' || col > 'G') { cout << "Invalid column. Back to menu.\n"; return; }
+
+    // 2. Check occupancy and find max ID for auto-increment
+    int maxID = 0;
+    for (int i = 0; i < count; i++) {
+        if (arr[i].seatRow == row && arr[i].seatCol == col) {
+            cout << "Error: Seat " << row << col << " is already reserved!\n";
+            return; // Exit immediately
+        }
+        if (arr[i].passengerID > maxID) maxID = arr[i].passengerID;
+    }
+
+    // 3. Finalize details only if seat is free
+    finalizeBooking(arr[count], maxID + 1, row, col);
     count++;
-    return true;
 }
 
 bool deletePassenger(Passenger arr[], int& count, int id) {
@@ -278,34 +337,33 @@ void runArrayBasedSystem() {
     int choice;
     do {
         cout << "\n=== ARRAY-BASED SYSTEM ===\n";
-        cout << "1. Cancellation\n";
+        cout << "1. Delete Passenger\n";
         cout << "2. Print Manifest\n";
-        cout << "3. Booking\n";
+        cout << "3. Reserve Seat (New)\n"; // NEW OPTION
         cout << "0. Back\nChoice: ";
         cin >> choice;
 
-        if (choice == 1) {
-            int id;
-            cout << "Enter Passenger ID: ";
-            cin >> id;
-            if (deletePassenger(passengers, count, id))
-                cout << "Successfully cancelled.\n";
-            else
-                cout << "Passenger not found.\n";
-        }
-        else if (choice == 2) {
-            cout << "\nPassenger Manifest:\n";
-            printPassengers(passengers, count);
-        }
-        else if (choice == 3)
-        {
-            Passenger p = getPassengerInput();
-            
-            if (insertPassenger_Array(passengers, count, p))
-            {
-                cout << "Reservation successful (Array).\n";
+        switch (choice) {
+            case 1: {
+                int id;
+                cout << "Enter Passenger ID to delete: ";
+                cin >> id;
+                if (deletePassenger(passengers, count, id))
+                    cout << "Passenger deleted successfully.\n";
+                else
+                    cout << "Passenger not found.\n";
+                break;
             }
-            
+            case 2:
+                cout << "\nPassenger Manifest:\n";
+                printPassengers(passengers, count);
+                break;
+            case 3:
+                // Calls the enhanced insertion logic
+                insertPassenger_Array(passengers, count);
+                break;
+            case 0: break;
+            default: cout << "Invalid choice.\n";
         }
     } while (choice != 0);
 }

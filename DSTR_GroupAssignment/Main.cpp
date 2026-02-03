@@ -81,6 +81,26 @@ void loadFromCSV_Linked(const char* filename, Node*& head) {
     file.close();
 }
 
+Passenger getPassengerInput() {
+    Passenger p;
+    cout << "Enter Passenger ID: "; cin >> p.passengerID;
+    cout << "Enter Name: "; cin.ignore(); cin.getline(p.name, 50);
+    cout << "Enter Seat Row: "; cin >> p.seatRow;
+    cout << "Enter Seat Column: "; cin >> p.seatCol;
+    cout << "Enter Class: "; cin.ignore(); cin.getline(p.seatClass, 15);
+    return p;
+}
+
+bool insertPassenger_Linked(Node*& head, Passenger p) {
+    Node* newNode = new Node;
+    if (!newNode) return false; // Memory allocation failed
+
+    newNode->data = p;
+    newNode->next = head; // Insert at the beginning (O(1))
+    head = newNode;
+    return true;
+}
+
 bool deletePassenger(Node*& head, int id) {
     Node* curr = head;
     Node* prev = nullptr;
@@ -118,6 +138,7 @@ void runLinkedListBasedSystem() {
         cout << "\n=== LINKED-LIST SYSTEM ===\n";
         cout << "1. Cancellation\n";
         cout << "2. Print Manifest\n";
+        cout << "3. Booking\n";
         cout << "0. Back\nChoice: ";
         cin >> choice;
 
@@ -133,6 +154,15 @@ void runLinkedListBasedSystem() {
         else if (choice == 2) {
             cout << "\nPassenger Manifest:\n";
             printPassengers(head);
+        }
+        else if (choice == 3){
+
+            Passenger p = getPassengerInput();
+
+            if(insertPassenger_Linked(head, p))
+            {
+                cout<< "Reservation successful (Linked List). \n";
+            }
         }
     } while (choice != 0);
 
@@ -202,6 +232,17 @@ int loadFromCSV_Array(const char* filename, Passenger arr[], int& count) {
     return count;
 }
 
+bool insertPassenger_Array(Passenger arr[], int& count, Passenger p) {
+    if (count >= MAX_PASSENGERS) {
+        cout << "Error: Flight is full (Array Capacity Reached)." << endl;
+        return false;
+    }
+
+    arr[count] = p; // Insert at the end of current count (O(1))
+    count++;
+    return true;
+}
+
 bool deletePassenger(Passenger arr[], int& count, int id) {
     int idx = -1;
     for (int i = 0; i < count; ++i) {
@@ -239,6 +280,7 @@ void runArrayBasedSystem() {
         cout << "\n=== ARRAY-BASED SYSTEM ===\n";
         cout << "1. Cancellation\n";
         cout << "2. Print Manifest\n";
+        cout << "3. Booking\n";
         cout << "0. Back\nChoice: ";
         cin >> choice;
 
@@ -254,6 +296,16 @@ void runArrayBasedSystem() {
         else if (choice == 2) {
             cout << "\nPassenger Manifest:\n";
             printPassengers(passengers, count);
+        }
+        else if (choice == 3)
+        {
+            Passenger p = getPassengerInput();
+            
+            if (insertPassenger_Array(passengers, count, p))
+            {
+                cout << "Reservation successful (Array).\n";
+            }
+            
         }
     } while (choice != 0);
 }

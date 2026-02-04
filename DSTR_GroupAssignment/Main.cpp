@@ -2,7 +2,8 @@
 #include <fstream>
 #include <cstring>
 #include <string>       
-#include <random>       
+#include <random>    
+#include <limits>    
 
 using namespace std;
 
@@ -166,6 +167,39 @@ void printPassengers(Node* head) {
     }
 }
 
+// Search function for linked-list implementation
+void searchPassenger_Linked(Node* head) {
+    int searchID;
+    cout << "Enter Passenger ID to search: ";
+
+    while (!(cin >> searchID)) {
+        cout << "Invalid input!\nPlease enter a numeric ID: ";
+        cin.clear(); 
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+    }
+
+    Node* temp = head;
+    bool found = false;
+
+    while (temp != nullptr) {
+        if (temp->data.passengerID == searchID) {
+            cout << "\n--- Passenger Found ---\n";
+            cout << "ID: " << temp->data.passengerID << endl;
+            cout << "Name: " << temp->data.name << endl;
+            cout << "Seat: " << temp->data.seatRow << temp->data.seatCol << endl;
+            cout << "Class: " << temp->data.seatClass << endl;
+            cout << "-----------------------\n";
+            found = true;
+            break; 
+        }
+        temp = temp->next;
+    }
+
+    if (!found) {
+        cout << "Error: Passenger with ID " << searchID << " not found.\n";
+    }
+}
+
 void runLinkedListBasedSystem() {
     Node* head = nullptr;
     loadFromCSV_Linked("flight_passenger_data.csv", head);
@@ -176,6 +210,7 @@ void runLinkedListBasedSystem() {
         cout << "1. Delete Passenger\n";
         cout << "2. Print Manifest\n";
         cout << "3. Reserve Seat (New)\n"; // NEW OPTION
+        cout << "4. Search Passenger\n";
         cout << "0. Back\nChoice: ";
         cin >> choice;
 
@@ -198,6 +233,11 @@ void runLinkedListBasedSystem() {
                 // Calls the enhanced insertion logic
                 insertPassenger_Linked(head);
                 break;
+
+            case 4:
+                searchPassenger_Linked(head);
+                break;
+
             case 0: break;
             default: cout << "Invalid choice.\n";
         }
@@ -328,6 +368,37 @@ void printPassengers(Passenger arr[], int count) {
     }
 }
 
+// Search function for array-based implementation
+
+void searchPassenger_Array(Passenger arr[], int count) {
+    int searchID;
+    cout << "Enter Passenger ID to search: ";
+    
+    while (!(cin >> searchID)) {
+        cout << "Invalid input!\nPlease enter a numeric ID: ";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+
+    bool found = false;
+    for (int i = 0; i < count; ++i) {
+        if (arr[i].passengerID == searchID) {
+            cout << "\n--- Passenger Found ---\n";
+            cout << "ID: " << arr[i].passengerID << endl;
+            cout << "Name: " << arr[i].name << endl;
+            cout << "Seat: " << arr[i].seatRow << arr[i].seatCol << endl;
+            cout << "Class: " << arr[i].seatClass << endl;
+            cout << "-----------------------\n";
+            found = true;
+            break; 
+        }
+    }
+
+    if (!found) {
+        cout << "Error: Passenger with ID " << searchID << " not found.\n";
+    }
+}
+
 void runArrayBasedSystem() {
     Passenger passengers[MAX_PASSENGERS];
     int count = 0;
@@ -340,6 +411,7 @@ void runArrayBasedSystem() {
         cout << "1. Delete Passenger\n";
         cout << "2. Print Manifest\n";
         cout << "3. Reserve Seat (New)\n"; // NEW OPTION
+        cout << "4. Search Passenger\n";
         cout << "0. Back\nChoice: ";
         cin >> choice;
 
@@ -362,6 +434,11 @@ void runArrayBasedSystem() {
                 // Calls the enhanced insertion logic
                 insertPassenger_Array(passengers, count);
                 break;
+
+            case 4:
+                searchPassenger_Array(passengers, count);
+                break;
+
             case 0: break;
             default: cout << "Invalid choice.\n";
         }

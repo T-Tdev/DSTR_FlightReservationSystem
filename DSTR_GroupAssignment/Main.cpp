@@ -199,7 +199,8 @@ void searchPassenger_Linked(Node* head) {
         cout << "Error: Passenger with ID " << searchID << " not found.\n";
     }
 
-    cout << "\n[Running Performance Test (100,000 iterations)...]\n";
+    //timer
+    cout << "\n[Running Performance Test (100,000 iterations)]\n";
 
     auto start = chrono::high_resolution_clock::now(); 
 
@@ -217,6 +218,31 @@ void searchPassenger_Linked(Node* head) {
     chrono::duration<double> elapsed = end - start;
 
     cout << ">> Time Efficiency (Linked List): " << elapsed.count() << " seconds.\n";
+
+    cout << "\n----------------------------------------\n";
+
+    cout << "\n[Memory Usage Analysis - Linked List]\n";
+
+    //memory usage analysis
+    int nodeCount = 0;
+    Node* counterPtr = head;
+    while (counterPtr) {
+    nodeCount++;
+    counterPtr = counterPtr->next;
+    }
+
+    long dataSize = nodeCount * sizeof(Passenger);
+
+    long pointerOverhead = nodeCount * sizeof(Node*); 
+
+    long totalDynamic = dataSize + pointerOverhead;
+
+    cout << "   Current Node Count:       " << nodeCount << "\n";
+    cout << "   Data Size (Payload):      " << dataSize << " bytes\n";
+    cout << "   Pointer Overhead (Next*): " << pointerOverhead << " bytes\n";
+    cout << "   Total Dynamic Memory:     " << totalDynamic << " bytes\n";
+    cout << "   -> Trade-off: No wasted space for empty seats, but pays extra for pointers.\n";
+    cout << "\n----------------------------------------\n";
 }
 
 void runLinkedListBasedSystem() {
@@ -416,6 +442,7 @@ void searchPassenger_Array(Passenger arr[], int count) {
         cout << "Error: Passenger with ID " << searchID << " not found.\n";
     }
 
+    //timer
     cout << "\n[Running Time Test (100,000 iterations)]\n";
     
     auto start = chrono::high_resolution_clock::now();
@@ -427,11 +454,23 @@ void searchPassenger_Array(Passenger arr[], int count) {
             }
         }
     }
-
+    
     auto end = chrono::high_resolution_clock::now(); 
     chrono::duration<double> elapsed = end - start;
 
     cout << ">> Time Efficiency (Array): " << elapsed.count() << " seconds.\n";
+
+    cout << "\n----------------------------------------\n";
+
+    //memory usage analysis
+    cout << "\n[Memory Usage Analysis - Array]\n";
+    long totalAllocated = MAX_PASSENGERS * sizeof(Passenger);
+    long actualUsed = count * sizeof(Passenger);
+    long wastedSpace = totalAllocated - actualUsed;
+    cout << "   Total Static Memory Allocated: " << totalAllocated << " bytes\n";
+    cout << "   Actually Used Memory:          " << actualUsed << " bytes\n";
+    cout << "   Wasted Space (Empty Seats):    " << wastedSpace << " bytes\n";
+    cout << "\n----------------------------------------\n";
 }
 
 void runArrayBasedSystem() {

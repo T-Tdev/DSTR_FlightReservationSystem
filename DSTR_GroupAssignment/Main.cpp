@@ -3,7 +3,8 @@
 #include <cstring>
 #include <string>       
 #include <random>    
-#include <limits>    
+#include <limits>
+#include <chrono>
 
 using namespace std;
 
@@ -168,19 +169,19 @@ void printPassengers(Node* head) {
 }
 
 // Search function for linked-list implementation
+
 void searchPassenger_Linked(Node* head) {
     int searchID;
     cout << "Enter Passenger ID to search: ";
 
     while (!(cin >> searchID)) {
-        cout << "Invalid input!\nPlease enter a numeric ID: ";
-        cin.clear(); 
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
+        cout << "Invalid input! Please enter a numeric ID: ";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
     }
 
     Node* temp = head;
     bool found = false;
-
     while (temp != nullptr) {
         if (temp->data.passengerID == searchID) {
             cout << "\n--- Passenger Found ---\n";
@@ -194,10 +195,28 @@ void searchPassenger_Linked(Node* head) {
         }
         temp = temp->next;
     }
-
     if (!found) {
         cout << "Error: Passenger with ID " << searchID << " not found.\n";
     }
+
+    cout << "\n[Running Performance Test (100,000 iterations)...]\n";
+
+    auto start = chrono::high_resolution_clock::now(); 
+
+    for(int k = 0; k < 100000; k++) { 
+        Node* curr = head; 
+        while (curr != nullptr) {
+            if (curr->data.passengerID == searchID) {
+                break; 
+            }
+            curr = curr->next;
+        }
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+
+    cout << ">> Time Efficiency (Linked List): " << elapsed.count() << " seconds.\n";
 }
 
 void runLinkedListBasedSystem() {
@@ -393,10 +412,26 @@ void searchPassenger_Array(Passenger arr[], int count) {
             break; 
         }
     }
-
     if (!found) {
         cout << "Error: Passenger with ID " << searchID << " not found.\n";
     }
+
+    cout << "\n[Running Time Test (100,000 iterations)]\n";
+    
+    auto start = chrono::high_resolution_clock::now();
+
+    for(int k = 0; k < 100000; k++) { 
+        for (int i = 0; i < count; ++i) {
+            if (arr[i].passengerID == searchID) {
+                break;
+            }
+        }
+    }
+
+    auto end = chrono::high_resolution_clock::now(); 
+    chrono::duration<double> elapsed = end - start;
+
+    cout << ">> Time Efficiency (Array): " << elapsed.count() << " seconds.\n";
 }
 
 void runArrayBasedSystem() {

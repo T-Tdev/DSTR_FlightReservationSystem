@@ -157,7 +157,33 @@ bool deletePassenger(Node*& head, int id) {
     return false;
 }
 
+// Link-list based Manifest & Seat Report
 void printPassengers(Node* head) {
+    auto start = chrono::high_resolution_clock::now();
+    int nodeCount = 0;
+
+    // --- SEAT REPORT (Visual Grid) ---
+    cout << "\n--- SEATING CHART (Linked List-Based) ---\n    A B C   D E F\n";
+    for (int r = 1; r <= 30; r++) {
+        printf("%02d ", r);
+        for (char c = 'A'; c <= 'F'; c++) {
+            if (c == 'D') cout << "  "; 
+            bool occupied = false;
+            Node* temp = head;
+            while (temp) {
+                if (temp->data.seatRow == r && toupper(temp->data.seatCol) == c) {
+                    occupied = true;
+                    break;
+                }
+                temp = temp->next;
+            }
+            cout << (occupied ? "X " : ". ");
+        }
+        cout << endl;
+    }
+
+    // --- PASSENGER MANIFEST ---
+    cout << "\n--- PASSENGER MANIFEST ---\n";
     Node* temp = head;
     while (temp) {
         cout << temp->data.passengerID << " | "
@@ -165,7 +191,18 @@ void printPassengers(Node* head) {
              << temp->data.seatRow << temp->data.seatCol << " | "
              << temp->data.seatClass << endl;
         temp = temp->next;
+        nodeCount++;
     }
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+
+    // Efficiency Metrics
+    long totalUsed = nodeCount * sizeof(Node);
+    cout << "\n----------------------------------------\n";
+    cout << "Time taken: " << elapsed.count() << " s\n";
+    cout << "Memory used: " << totalUsed << " bytes \n";
+    cout << "----------------------------------------\n";
 }
 
 // Search function for linked-list implementation
@@ -404,13 +441,46 @@ bool deletePassenger(Passenger arr[], int& count, int id) {
     return true;
 }
 
+// array-based Manifest & Seat Report
 void printPassengers(Passenger arr[], int count) {
+    auto start = chrono::high_resolution_clock::now();
+
+    // --- SEAT REPORT ---
+    cout << "\n--- SEATING CHART (Array-Based) ---\n    A B C   D E F\n";
+    for (int r = 1; r <= 30; r++) {
+        printf("%02d ", r);
+        for (char c = 'A'; c <= 'F'; c++) {
+            if (c == 'D') cout << "  "; 
+            bool occupied = false;
+            for (int i = 0; i < count; i++) {
+                if (arr[i].seatRow == r && toupper(arr[i].seatCol) == c) {
+                    occupied = true;
+                    break;
+                }
+            }
+            cout << (occupied ? "X " : ". ");
+        }
+        cout << endl;
+    }
+
+    // --- PASSENGER MANIFEST ---
+    cout << "\n--- PASSENGER MANIFEST ---\n";
     for (int i = 0; i < count; ++i) {
         cout << arr[i].passengerID << " | "
              << arr[i].name << " | "
              << arr[i].seatRow << arr[i].seatCol << " | "
              << arr[i].seatClass << endl;
     }
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+
+    // Efficiency Metrics
+    long totalAllocated = MAX_PASSENGERS * sizeof(Passenger);
+    cout << "\n----------------------------------------\n";
+    cout << "Time taken: " << elapsed.count() << " s\n";
+    cout << "Memory used: " << totalAllocated << " bytes \n";
+    cout << "----------------------------------------\n";
 }
 
 // Search function for array-based implementation

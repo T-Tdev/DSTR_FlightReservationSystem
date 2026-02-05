@@ -22,6 +22,27 @@ struct Node {
     Node* next;
 };
 
+long calculateLinkedListMemory(Node* head);
+long calculateArrayMemory(int count);
+
+void benchmarkLinkedListDeletion(Node*& head);
+void benchmarkArrayDeletion(Passenger passengers[], int& count);
+
+long calculateLinkedListMemory(Node* head) {
+    int nodes = 0;
+    Node* temp = head;
+    while (temp) {
+        nodes++;
+        temp = temp->next;
+    }
+    return nodes * sizeof(Node);
+}
+
+long calculateArrayMemory(int count) {
+    return count * sizeof(Passenger);
+}
+
+
 void loadFromCSV_Linked(const char* filename, Node*& head) {
     ifstream file(filename);
     if (!file) {
@@ -282,6 +303,47 @@ void searchPassenger_Linked(Node* head) {
     cout << "\n----------------------------------------\n";
 }
 
+void benchmarkLinkedListDeletion(Node*& head) {
+    if (!head) {
+        cout << "No passengers to delete.\n";
+        return;
+    }
+
+    int deleteID;
+    cout << "Enter Passenger ID to delete: ";
+    cin >> deleteID;
+
+    // --- Normal deletion ---
+    if (!deletePassenger(head, deleteID)) {
+        cout << "Passenger not found.\n";
+        return;
+    }
+
+    cout << "Passenger deleted successfully.\n";
+
+    // --- Benchmark ---
+    long memBefore = calculateLinkedListMemory(head);
+
+    auto start = chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < 100000; i++) {
+        deletePassenger(head, deleteID); // repeated attempt
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    long memAfter = calculateLinkedListMemory(head);
+
+    chrono::duration<double> elapsed = end - start;
+
+    cout << "\n--- LINKED LIST DELETION BENCHMARK ---\n";
+    cout << "Time taken (100,000 deletions): " << elapsed.count() << " seconds\n";
+    cout << "Memory before deletion: " << memBefore << " bytes\n";
+    cout << "Memory after deletion:  " << memAfter << " bytes\n";
+    cout << "-----------------------------------\n";
+}
+
+
+
 void runLinkedListBasedSystem() {
     Node* head = nullptr;
     loadFromCSV_Linked("flight_passenger_data.csv", head);
@@ -298,15 +360,10 @@ void runLinkedListBasedSystem() {
 
         switch (choice) {
             case 1: {
-                int id;
-                cout << "Enter Passenger ID to delete: ";
-                cin >> id;
-                if (deletePassenger(head, id))
-                    cout << "Passenger deleted successfully.\n";
-                else
-                    cout << "Passenger not found.\n";
+                benchmarkLinkedListDeletion(head);
                 break;
             }
+
             case 2:
                 cout << "\nPassenger Manifest:\n";
                 printPassengers(head);
@@ -543,6 +600,46 @@ void searchPassenger_Array(Passenger arr[], int count) {
     cout << "\n----------------------------------------\n";
 }
 
+void benchmarkArrayDeletion(Passenger passengers[], int& count) {
+    if (count == 0) {
+        cout << "No passengers to delete.\n";
+        return;
+    }
+
+    int deleteID;
+    cout << "Enter Passenger ID to delete: ";
+    cin >> deleteID;
+
+    // --- Normal deletion ---
+    if (!deletePassenger(passengers, count, deleteID)) {
+        cout << "Passenger not found.\n";
+        return;
+    }
+
+    cout << "Passenger deleted successfully.\n";
+
+    // --- Benchmark ---
+    long memBefore = calculateArrayMemory(count);
+
+    auto start = chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < 100000 && count > 0; i++) {
+        deletePassenger(passengers, count, deleteID);
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    long memAfter = calculateArrayMemory(count);
+
+    chrono::duration<double> elapsed = end - start;
+
+    cout << "\n--- ARRAY DELETION BENCHMARK ---\n";
+    cout << "Time taken (100,000 deletions): " << elapsed.count() << " seconds\n";
+    cout << "Memory before deletion: " << memBefore << " bytes\n";
+    cout << "Memory after deletion:  " << memAfter << " bytes\n";
+    cout << "-----------------------------------\n";
+}
+
+
 void runArrayBasedSystem() {
     Passenger passengers[MAX_PASSENGERS];
     int count = 0;
@@ -561,15 +658,10 @@ void runArrayBasedSystem() {
 
         switch (choice) {
             case 1: {
-                int id;
-                cout << "Enter Passenger ID to delete: ";
-                cin >> id;
-                if (deletePassenger(passengers, count, id))
-                    cout << "Passenger deleted successfully.\n";
-                else
-                    cout << "Passenger not found.\n";
+                benchmarkArrayDeletion(passengers, count);
                 break;
             }
+
             case 2:
                 cout << "\nPassenger Manifest:\n";
                 printPassengers(passengers, count);

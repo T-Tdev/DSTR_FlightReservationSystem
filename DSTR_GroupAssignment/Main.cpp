@@ -136,9 +136,9 @@ void insertPassenger_Linked(Node*& head) {
     cout << "Enter Seat Row (1-30): "; cin >> row;
     if (row < 1 || row > 30) { cout << "Invalid row. Back to menu.\n"; return; }
     
-    cout << "Enter Seat Column (A-G): "; cin >> col;
+    cout << "Enter Seat Column (A-F): "; cin >> col;
     col = toupper(col);
-    if (col < 'A' || col > 'G') { cout << "Invalid column. Back to menu.\n"; return; }
+    if (col < 'A' || col > 'F') { cout << "Invalid column. Back to menu.\n"; return; }
 
     // 1. Traverse to verify seat status and find max ID
     int maxID = 0;
@@ -183,10 +183,11 @@ void printPassengers(Node* head) {
     auto start = chrono::high_resolution_clock::now();
     int nodeCount = 0;
 
-    // --- SEAT REPORT (Visual Grid) ---
-    cout << "\n--- SEATING CHART (Linked List-Based) ---\n    A B C   D E F\n";
+    //seating chart(Linked List-Based)
+    cout << "\n=====================\n";
+    cout << "    SEATING CHART     \n    A B C   D E F\n";
     for (int r = 1; r <= 30; r++) {
-        printf("%02d ", r);
+        printf("%02d |", r);
         for (char c = 'A'; c <= 'F'; c++) {
             if (c == 'D') cout << "  "; 
             bool occupied = false;
@@ -203,27 +204,33 @@ void printPassengers(Node* head) {
         cout << endl;
     }
 
-    // --- PASSENGER MANIFEST ---
-    cout << "\n--- PASSENGER MANIFEST ---\n";
-    Node* temp = head;
-    while (temp) {
-        cout << temp->data.passengerID << " | "
-             << temp->data.name << " | "
-             << temp->data.seatRow << temp->data.seatCol << " | "
-             << temp->data.seatClass << endl;
-        temp = temp->next;
-        nodeCount++;
+    //PASSENGER MANIFEST
+    cout << "\n==========================\n";
+    cout << "    PASSENGER MANIFEST    \n";
+    for (int r = 1; r <= 30; r++) {
+        for (char c = 'A'; c <= 'F'; c++) {
+            Node* temp = head;
+            while (temp) {
+                if (temp->data.seatRow == r && toupper(temp->data.seatCol) == c) {
+                    cout << temp->data.seatRow << temp->data.seatCol << " | "
+                         << temp->data.passengerID << " | "
+                         << temp->data.seatClass << " | "
+                         << temp->data.name << endl;
+                    break; // Move to next seat once passenger is found
+                }
+                temp = temp->next;
+            }
+        }
     }
 
+    // Performance/Memory Analysis
+    Node* countPtr = head;
+    while(countPtr) { nodeCount++; countPtr = countPtr->next; }
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
 
-    // Efficiency Metrics
-    long totalUsed = nodeCount * sizeof(Node);
-    cout << "\n----------------------------------------\n";
-    cout << "Time taken: " << elapsed.count() << " s\n";
-    cout << "Memory used: " << totalUsed << " bytes \n";
-    cout << "----------------------------------------\n";
+    cout << "\nTime taken: " << elapsed.count() << " s\n";
+    cout << "Memory used: " << (nodeCount * sizeof(Node)) << " bytes\n";
 }
 
 // Search function for linked-list implementation
@@ -350,29 +357,30 @@ void runLinkedListBasedSystem() {
 
     int choice;
     do {
-        cout << "\n=== LINKED-LIST SYSTEM ===\n";
-        cout << "1. Delete Passenger\n";
-        cout << "2. Print Manifest\n";
-        cout << "3. Reserve Seat (New)\n"; // NEW OPTION
-        cout << "4. Search Passenger\n";
+        cout << "\n==========================\n";
+        cout << "    LINKED-LIST SYSTEM    \n";
+        cout << "==========================\n";
+        cout << "1. Manifest & Seat Report\n";
+        cout << "2. Reservation\n"; //Insertion
+        cout << "3. Cancellation\n"; //Deletion
+        cout << "4. Seat Lookup\n"; //Search
         cout << "0. Back\nChoice: ";
         cin >> choice;
 
         switch (choice) {
-            case 1: {
-                benchmarkLinkedListDeletion(head);
-                break;
-            }
-
-            case 2:
-                cout << "\nPassenger Manifest:\n";
+            case 1: 
+                cout << "\nManifest & Seat Report...\n";
                 printPassengers(head);
                 break;
-            case 3:
-                // Calls the enhanced insertion logic
+
+            case 2:
                 insertPassenger_Linked(head);
                 break;
 
+            case 3:
+                benchmarkLinkedListDeletion(head);
+                break;
+                
             case 4:
                 searchPassenger_Linked(head);
                 break;
@@ -458,13 +466,13 @@ void insertPassenger_Array(Passenger arr[], int& count) {
     int row;
     char col;
 
-    // 1. Input Row/Col with validation (1-30, A-G)
+    // 1. Input Row/Col with validation (1-30, A-F)
     cout << "Enter Seat Row (1-30): "; cin >> row;
     if (row < 1 || row > 30) { cout << "Invalid row. Back to menu.\n"; return; }
     
-    cout << "Enter Seat Column (A-G): "; cin >> col;
+    cout << "Enter Seat Column (A-F): "; cin >> col;
     col = toupper(col);
-    if (col < 'A' || col > 'G') { cout << "Invalid column. Back to menu.\n"; return; }
+    if (col < 'A' || col > 'F') { cout << "Invalid column. Back to menu.\n"; return; }
 
     // 2. Check occupancy and find max ID for auto-increment
     int maxID = 0;
@@ -502,10 +510,11 @@ bool deletePassenger(Passenger arr[], int& count, int id) {
 void printPassengers(Passenger arr[], int count) {
     auto start = chrono::high_resolution_clock::now();
 
-    // --- SEAT REPORT ---
-    cout << "\n--- SEATING CHART (Array-Based) ---\n    A B C   D E F\n";
+    // seating chart(Array-Based)
+    cout << "\n===================\n";
+    cout << "   SEATING CHART     \n    A B C   D E F\n";
     for (int r = 1; r <= 30; r++) {
-        printf("%02d ", r);
+        printf("%02d |", r);
         for (char c = 'A'; c <= 'F'; c++) {
             if (c == 'D') cout << "  "; 
             bool occupied = false;
@@ -520,24 +529,29 @@ void printPassengers(Passenger arr[], int count) {
         cout << endl;
     }
 
-    // --- PASSENGER MANIFEST ---
-    cout << "\n--- PASSENGER MANIFEST ---\n";
-    for (int i = 0; i < count; ++i) {
-        cout << arr[i].passengerID << " | "
-             << arr[i].name << " | "
-             << arr[i].seatRow << arr[i].seatCol << " | "
-             << arr[i].seatClass << endl;
+    //PASSENGER MANIFEST
+    cout << "\n========================\n";
+    cout << "   PASSENGER MANIFEST    \n";
+    cout << "Seat | ID | Class | Name\n";
+    for (int r = 1; r <= 30; r++) {
+        for (char c = 'A'; c <= 'F'; c++) {
+            for (int i = 0; i < count; i++) {
+                if (arr[i].seatRow == r && toupper(arr[i].seatCol) == c) {
+                    cout << arr[i].seatRow << arr[i].seatCol << " | "
+                         << arr[i].passengerID << " | "
+                         << arr[i].seatClass << " | "
+                         << arr[i].name << endl;
+                    break;
+                }
+            }
+        }
     }
 
     auto end = chrono::high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
 
-    // Efficiency Metrics
-    long totalAllocated = MAX_PASSENGERS * sizeof(Passenger);
-    cout << "\n----------------------------------------\n";
-    cout << "Time taken: " << elapsed.count() << " s\n";
-    cout << "Memory used: " << totalAllocated << " bytes \n";
-    cout << "----------------------------------------\n";
+    cout << "\nTime taken: " << elapsed.count() << " s\n";
+    cout << "Memory used: " << (MAX_PASSENGERS * sizeof(Passenger)) << " bytes\n";
 }
 
 // Search function for array-based implementation
@@ -648,30 +662,31 @@ void runArrayBasedSystem() {
 
     int choice;
     do {
-        cout << "\n=== ARRAY-BASED SYSTEM ===\n";
-        cout << "1. Delete Passenger\n";
-        cout << "2. Print Manifest\n";
-        cout << "3. Reserve Seat (New)\n"; // NEW OPTION
-        cout << "4. Search Passenger\n";
+        cout << "\n==========================\n";
+        cout << "    ARRAY-BASED SYSTEM    \n";
+        cout << "==========================\n";
+        cout << "1. Manifest & Seat Report\n";
+        cout << "2. Reservation\n"; //Insertion
+        cout << "3. Cancellation\n"; //Deletion
+        cout << "4. Seat Lookup\n"; //Search
         cout << "0. Back\nChoice: ";
         cin >> choice;
-
+        
         switch (choice) {
-            case 1: {
-                benchmarkArrayDeletion(passengers, count);
-                break;
-            }
-
-            case 2:
-                cout << "\nPassenger Manifest:\n";
+            case 1: //Manifest report
+                cout << "\nManifest & Seat Report...";
                 printPassengers(passengers, count);
                 break;
-            case 3:
-                // Calls the enhanced insertion logic
+
+            case 2: //Insertion
                 insertPassenger_Array(passengers, count);
                 break;
 
-            case 4:
+            case 3://Deletion
+                benchmarkArrayDeletion(passengers, count);
+                break;
+
+            case 4://Search
                 searchPassenger_Array(passengers, count);
                 break;
 
@@ -685,10 +700,14 @@ void runArrayBasedSystem() {
 int main() {
     int choice;
     do {
-        cout << "\n=== FLIGHT RESERVATION SYSTEM ===\n";
-        cout << "1. Array-Based Implementation\n";
-        cout << "2. Linked List-Based Implementation\n";
-        cout << "0. Exit\n";
+        cout << "\n=================================\n";
+        cout << "        FLIGHT RESERVATION       \n";
+        cout << "                &                \n";
+        cout << "    SEATING MANAGEMENT SYSTEM    \n";
+        cout << "=================================\n";
+        cout << "1. Array-Based Implementation \n";
+        cout << "2. Linked List-Based Implementation \n";
+        cout << "0. Exit \n";
         cout << "Choice: ";
         cin >> choice;
 

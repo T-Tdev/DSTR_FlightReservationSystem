@@ -22,11 +22,17 @@ struct Node {
     Node* next;
 };
 
-long calculateLinkedListMemory(Node* head);
-long calculateArrayMemory(int count);
+void runArrayBasedSystem();
+void runLinkedListBasedSystem();
+
+void printPassengers(Passenger arr[], int count);
+void printPassengers(Node* head);
 
 void benchmarkLinkedListDeletion(Node*& head);
 void benchmarkArrayDeletion(Passenger passengers[], int& count);
+
+long calculateLinkedListMemory(Node* head);
+long calculateArrayMemory(int count);
 
 long calculateLinkedListMemory(Node* head) {
     int nodes = 0;

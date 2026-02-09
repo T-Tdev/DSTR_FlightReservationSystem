@@ -9,6 +9,8 @@
 using namespace std;
 
 const int MAX_PASSENGERS = 180;
+const int TOTAL_ROWS = 30;
+const int TOTAL_COLS = 6;
 
 struct Passenger {
     int passengerID;
@@ -47,20 +49,63 @@ long calculateArrayMemory(int count) {
 }
 
 // --- SHARED UTILITIES ---
+// Checks if all seats in a specific class range are occupied
+bool isSectionFull(bool taken[31][6], int startRow, int endRow) {
+    for (int r = startRow; r <= endRow; r++) {
+        for (int c = 0; c < 6; c++) {
+            if (!taken[r][c]) return false; 
+        }
+    }
+    return true;
+}
+
 // 6 Columns: A, B, C | D, E, F
+// Visual representation of the plane
 void displaySeatingChart(bool taken[31][6]) {
-    cout << "\n      CURRENT SEATING CHART (1-30, A-F)\n";
+    cout << "\n      CURRENT SEATING CHART (Rows 1-30, Seats A-F)\n";
     cout << "      A B C   D E F\n";
     cout << "     ---------------\n";
     for (int r = 1; r <= 30; r++) {
+        if (r == 1) cout << "--- FIRST CLASS (1-3) ---\n";
+        else if (r == 4) cout << "--- BUSINESS CLASS (4-10) ---\n";
+        else if (r == 11) cout << "--- ECONOMY CLASS (11-30) ---\n";
+
         printf("%02d | ", r);
         for (int c = 0; c < 6; c++) {
-            if (c == 3) cout << "  "; // Aisle between C and D
+            if (c == 3) cout << "  "; 
             cout << (taken[r][c] ? "X " : ". ");
         }
         cout << endl;
     }
     cout << " (X = Occupied, . = Available)\n";
+}
+
+// --- REUSABLE VALIDATION HELPERS ---
+// Robust input validation for integers
+// Handles integer input with range check and "infinite loop" protection
+int getValidInt(int min, int max, const string& prompt) {
+    int val;
+    while (true) {
+        cout << prompt;
+        if (cin >> val && val >= min && val <= max) return val;
+        cout << ">> Error: Invalid input. Please enter a value between " << min << " and " << max << ".\n";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+}
+
+// Robust input validation for seat columns
+// Handles character input (A-F)
+char getValidCol() {
+    char col;
+    while (true) {
+        cout << "Enter Column (A-F): "; cin >> col;
+        col = toupper(col);
+        if (col >= 'A' && col <= 'F') return col;
+        cout << ">> Error: Invalid column. Please enter A, B, C, D, E, or F.\n";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
 }
 
 void finalizeBooking(Passenger &p, int newID, int row, char col) {
@@ -94,15 +139,12 @@ void loadFromCSV_Linked(const char* filename, Node*& head) {
 
     string line;
     getline(file, line); // Skip header
-
     bool taken[31][6] = {false};
-    head = nullptr;
     int loaded = 0;
 
     while (getline(file, line) && loaded < MAX_PASSENGERS) {
-        char buf[512] = {0};
-        strncpy(buf, line.c_str(), sizeof(buf) - 1);
-
+        char buf[512];
+        strncpy(buf, line.c_str(), sizeof(buf));
         char* token = strtok(buf, ",");
         int id = atoi(token);
         token = strtok(nullptr, ",");
@@ -124,45 +166,69 @@ void loadFromCSV_Linked(const char* filename, Node*& head) {
             newNode->data.seatRow = row;
             newNode->data.seatCol = col;
             strcpy(newNode->data.seatClass, sClass);
-            
+
             newNode->next = head;
             head = newNode;
             loaded++;
         }
     }
     file.close();
-    cout << "Initialized: " << loaded << " unique seat records loaded (A-F range).\n";
+    cout << "System initialized. " << loaded << " unique records imported into Linked List.\n";
 }
 
 void insertPassenger_Linked(Node*& head) {
+    auto start = chrono::high_resolution_clock::now();
+
     bool taken[31][6] = {false};
-    int maxID = 0;
+    int maxID = 0, count = 0;
     Node* temp = head;
     while (temp) {
         int cIdx = toupper(temp->data.seatCol) - 'A';
         if (temp->data.seatRow >= 1 && temp->data.seatRow <= 30 && cIdx >= 0 && cIdx < 6)
             taken[temp->data.seatRow][cIdx] = true;
         if (temp->data.passengerID > maxID) maxID = temp->data.passengerID;
+        count++;
         temp = temp->next;
     }
+
     displaySeatingChart(taken);
 
-    int row; char col;
-    cout << "\nEnter Requested Row (1-30): "; cin >> row;
-    if (row < 1 || row > 30) { cout << "Invalid row.\n"; return; }
-    cout << "Enter Requested Column (A-F): "; cin >> col;
-    col = toupper(col);
-    int cIdx = col - 'A';
+    int classChoice, startRow, endRow;
+    char className[15];
 
-    if (cIdx < 0 || cIdx > 5 || taken[row][cIdx]) {
-        cout << "Error: Seat is unavailable or out of A-F range!\n";
-        return;
+    while (true) {
+        classChoice = getValidInt(0, 3, "\nSelect Class:\n1. First (1-3)\n2. Business (4-10)\n3. Economy (11-30)\n0. Cancel\nChoice: ");
+        if (classChoice == 0) return;
+        if (classChoice == 1) { startRow = 1; endRow = 3; strcpy(className, "First"); }
+        else if (classChoice == 2) { startRow = 4; endRow = 10; strcpy(className, "Business"); }
+        else { startRow = 11; endRow = 30; strcpy(className, "Economy"); }
+
+        if (isSectionFull(taken, startRow, endRow)) cout << "!! Error: " << className << " class is full.\n";
+        else break;
     }
 
-    Node* newNode = new Node;
-    finalizeBooking(newNode->data, maxID + 1, row, col);
-    newNode->next = head;
-    head = newNode;
+    while (true) {
+        int row = getValidInt(startRow, endRow, "Select Row: ");
+        char col = getValidCol();
+        if (taken[row][col - 'A']) cout << "!! Seat " << row << col << " is already taken.\n";
+        else {
+            Node* newNode = new Node;
+            newNode->data.passengerID = maxID + 1;
+            newNode->data.seatRow = row;
+            newNode->data.seatCol = col;
+            strcpy(newNode->data.seatClass, className);
+            cout << "Enter Passenger Name: "; cin.ignore(); cin.getline(newNode->data.name, 50);
+            newNode->next = head;
+            head = newNode;
+            break;
+        }
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> elapsed = end - start;
+    cout << "\n[LINKED LIST PERFORMANCE]\n";
+    cout << "Execution Time: " << elapsed.count() << " microseconds\n";
+    cout << "Memory Usage: " << (count + 1) * sizeof(Node) << " bytes\n";
 }
 
 bool deletePassenger(Node*& head, int id) {
@@ -408,15 +474,13 @@ void loadFromCSV_Array(const char* filename, Passenger arr[], int& count) {
     if (!file) return;
 
     string line;
-    getline(file, line); 
-    
+    getline(file, line);
     bool taken[31][6] = {false};
     count = 0;
 
     while (getline(file, line) && count < MAX_PASSENGERS) {
-        char buf[512] = {0};
-        strncpy(buf, line.c_str(), sizeof(buf) - 1);
-
+        char buf[512];
+        strncpy(buf, line.c_str(), sizeof(buf));
         char* token = strtok(buf, ",");
         int id = atoi(token);
         token = strtok(nullptr, ",");
@@ -440,36 +504,56 @@ void loadFromCSV_Array(const char* filename, Passenger arr[], int& count) {
         }
     }
     file.close();
-    cout << "Initialized: " << count << " unique seat records loaded (A-F range).\n";
+    cout << "System initialized. " << count << " unique records imported into Array.\n";
 }
 
 void insertPassenger_Array(Passenger arr[], int& count) {
     if (count >= MAX_PASSENGERS) { cout << "Flight Full.\n"; return; }
+    auto start = chrono::high_resolution_clock::now();
 
     bool taken[31][6] = {false};
     int maxID = 0;
     for (int i = 0; i < count; i++) {
-        int cIdx = toupper(arr[i].seatCol) - 'A';
-        if (arr[i].seatRow >= 1 && arr[i].seatRow <= 30 && cIdx >= 0 && cIdx < 6)
-            taken[arr[i].seatRow][cIdx] = true;
+        taken[arr[i].seatRow][arr[i].seatCol - 'A'] = true;
         if (arr[i].passengerID > maxID) maxID = arr[i].passengerID;
     }
+
     displaySeatingChart(taken);
 
-    int row; char col;
-    cout << "\nEnter Requested Row (1-30): "; cin >> row;
-    if (row < 1 || row > 30) return;
-    cout << "Enter Requested Column (A-F): "; cin >> col;
-    col = toupper(col);
-    int cIdx = col - 'A';
+    int classChoice, startRow, endRow;
+    char className[15];
 
-    if (cIdx < 0 || cIdx > 5 || taken[row][cIdx]) {
-        cout << "Seat unavailable or invalid.\n";
-        return;
+    while (true) {
+        classChoice = getValidInt(0, 3, "\nSelect Class:\n1. First (1-3)\n2. Business (4-10)\n3. Economy (11-30)\n0. Cancel\nChoice: ");
+        if (classChoice == 0) return;
+        if (classChoice == 1) { startRow = 1; endRow = 3; strcpy(className, "First"); }
+        else if (classChoice == 2) { startRow = 4; endRow = 10; strcpy(className, "Business"); }
+        else { startRow = 11; endRow = 30; strcpy(className, "Economy"); }
+
+        if (isSectionFull(taken, startRow, endRow)) cout << "!! Error: Section Full.\n";
+        else break;
     }
 
-    finalizeBooking(arr[count], maxID + 1, row, col);
-    count++;
+    while (true) {
+        int row = getValidInt(startRow, endRow, "Select Row: ");
+        char col = getValidCol();
+        if (taken[row][col - 'A']) cout << "!! Seat Occupied.\n";
+        else {
+            arr[count].passengerID = maxID + 1;
+            arr[count].seatRow = row;
+            arr[count].seatCol = col;
+            strcpy(arr[count].seatClass, className);
+            cout << "Enter Name: "; cin.ignore(); cin.getline(arr[count].name, 50);
+            count++;
+            break;
+        }
+    }
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> elapsed = end - start;
+    cout << "\n[ARRAY PERFORMANCE]\n";
+    cout << "Execution Time: " << elapsed.count() << " microseconds\n";
+    cout << "Memory Usage (Static): " << MAX_PASSENGERS * sizeof(Passenger) << " bytes\n";
 }
 
 bool deletePassenger(Passenger arr[], int& count, int id) {

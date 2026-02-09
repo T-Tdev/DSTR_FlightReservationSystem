@@ -322,7 +322,14 @@ void benchmarkLinkedListDeletion(Node*& head) {
 
     int deleteID;
     cout << "Enter Passenger ID to delete: ";
-    cin >> deleteID;
+
+    // 🔴 Input validation
+    if (!(cin >> deleteID)) {
+        cout << "Error: Invalid input. Passenger ID must be a number.\n";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return;
+    }
 
     // --- Normal deletion ---
     if (!deletePassenger(head, deleteID)) {
@@ -334,11 +341,10 @@ void benchmarkLinkedListDeletion(Node*& head) {
 
     // --- Benchmark ---
     long memBefore = calculateLinkedListMemory(head);
-
     auto start = chrono::high_resolution_clock::now();
 
     for (int i = 0; i < 100000; i++) {
-        deletePassenger(head, deleteID); // repeated attempt
+        deletePassenger(head, deleteID);
     }
 
     auto end = chrono::high_resolution_clock::now();
@@ -352,6 +358,7 @@ void benchmarkLinkedListDeletion(Node*& head) {
     cout << "Memory after deletion:  " << memAfter << " bytes\n";
     cout << "-----------------------------------\n";
 }
+
 
 
 
@@ -605,7 +612,14 @@ void benchmarkArrayDeletion(Passenger passengers[], int& count) {
 
     int deleteID;
     cout << "Enter Passenger ID to delete: ";
-    cin >> deleteID;
+
+    // 🔴 Input validation
+    if (!(cin >> deleteID)) {
+        cout << "Error: Invalid input. Passenger ID must be a number.\n";
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return;
+    }
 
     // --- Normal deletion ---
     if (!deletePassenger(passengers, count, deleteID)) {
@@ -617,7 +631,6 @@ void benchmarkArrayDeletion(Passenger passengers[], int& count) {
 
     // --- Benchmark ---
     long memBefore = calculateArrayMemory(count);
-
     auto start = chrono::high_resolution_clock::now();
 
     for (int i = 0; i < 100000 && count > 0; i++) {
@@ -635,6 +648,7 @@ void benchmarkArrayDeletion(Passenger passengers[], int& count) {
     cout << "Memory after deletion:  " << memAfter << " bytes\n";
     cout << "-----------------------------------\n";
 }
+
 
 
 void runArrayBasedSystem() {

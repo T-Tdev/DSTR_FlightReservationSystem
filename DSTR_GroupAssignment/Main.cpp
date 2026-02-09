@@ -9,8 +9,8 @@
 using namespace std;
 
 const int MAX_PASSENGERS = 180;
-const int TOTAL_ROWS = 30;
-const int TOTAL_COLS = 6;
+// const int TOTAL_ROWS = 30;
+// const int TOTAL_COLS = 6;
 
 struct Passenger {
     int passengerID;
@@ -225,9 +225,9 @@ void insertPassenger_Linked(Node*& head) {
     }
 
     auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double, micro> elapsed = end - start;
+    chrono::duration<double> elapsed = end - start; // Default duration is seconds
     cout << "\n[LINKED LIST PERFORMANCE]\n";
-    cout << "Execution Time: " << elapsed.count() << " microseconds\n";
+    cout << "Execution Time: " << elapsed.count() << " seconds\n";
     cout << "Memory Usage: " << (count + 1) * sizeof(Node) << " bytes\n";
 }
 
@@ -550,9 +550,9 @@ void insertPassenger_Array(Passenger arr[], int& count) {
     }
 
     auto end = chrono::high_resolution_clock::now();
-    chrono::duration<double, micro> elapsed = end - start;
+    chrono::duration<double> elapsed = end - start;
     cout << "\n[ARRAY PERFORMANCE]\n";
-    cout << "Execution Time: " << elapsed.count() << " microseconds\n";
+    cout << "Execution Time: " << elapsed.count() << " seconds\n";
     cout << "Memory Usage (Static): " << MAX_PASSENGERS * sizeof(Passenger) << " bytes\n";
 }
 

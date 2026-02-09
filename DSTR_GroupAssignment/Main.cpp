@@ -8,6 +8,8 @@
 
 using namespace std;
 
+const int MAX_PASSENGERS = 180;
+
 struct Passenger {
     int passengerID;
     char name[50];
@@ -16,17 +18,13 @@ struct Passenger {
     char seatClass[15];
 };
 
-// LINKED-LIST IMPLEMENTATION
 struct Node {
     Passenger data;
     Node* next;
 };
 
-void runArrayBasedSystem();
-void runLinkedListBasedSystem();
-
-void printPassengers(Passenger arr[], int count);
-void printPassengers(Node* head);
+long calculateLinkedListMemory(Node* head);
+long calculateArrayMemory(int count);
 
 void benchmarkLinkedListDeletion(Node*& head);
 void benchmarkArrayDeletion(Passenger passengers[], int& count);
@@ -48,77 +46,31 @@ long calculateArrayMemory(int count) {
     return count * sizeof(Passenger);
 }
 
-
-void loadFromCSV_Linked(const char* filename, Node*& head) {
-    ifstream file(filename);
-    if (!file) {
-        cout << "Error: Cannot open file " << filename << endl;
-        return;
+// --- SHARED UTILITIES ---
+// 6 Columns: A, B, C | D, E, F
+void displaySeatingChart(bool taken[31][6]) {
+    cout << "\n      CURRENT SEATING CHART (1-30, A-F)\n";
+    cout << "      A B C   D E F\n";
+    cout << "     ---------------\n";
+    for (int r = 1; r <= 30; r++) {
+        printf("%02d | ", r);
+        for (int c = 0; c < 6; c++) {
+            if (c == 3) cout << "  "; // Aisle between C and D
+            cout << (taken[r][c] ? "X " : ". ");
+        }
+        cout << endl;
     }
-
-    string line;
-    getline(file, line); 
-
-    int total = 0;
-    while (getline(file, line)) total++;
-    file.close();
-
-    const int LOAD = 180;
-    int to_load = (total < LOAD) ? total : LOAD;
-
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<int> dist(0, total - to_load);
-
-    int skip = dist(gen);  
-
-  
-    file.open(filename);
-    getline(file, line);          
-    for (int i = 0; i < skip; ++i) {
-        getline(file, line);
-    }
-
-    head = nullptr;
-    int loaded = 0;
-
-    while (getline(file, line) && loaded < to_load) {
-        Node* node = new Node;
-        char buf[512] = {0};          
-        strncpy(buf, line.c_str(), sizeof(buf) - 1);
-
-        char* token = strtok(buf, ",");
-        if (!token) continue;
-        node->data.passengerID = atoi(token);
-
-        token = strtok(nullptr, ",");
-        if (token) strncpy(node->data.name, token, sizeof(node->data.name) - 1);
-
-        token = strtok(nullptr, ",");
-        if (token) node->data.seatRow = atoi(token);
-
-        token = strtok(nullptr, ",");
-        if (token) node->data.seatCol = token[0];
-
-        token = strtok(nullptr, ",");
-        if (token) strncpy(node->data.seatClass, token, sizeof(node->data.seatClass) - 1);
-
-        node->next = head;
-        head = node;
-        loaded++;
-    }
-    file.close();
+    cout << " (X = Occupied, . = Available)\n";
 }
 
-// Helper to finalize passenger details once seat is verified
 void finalizeBooking(Passenger &p, int newID, int row, char col) {
     p.passengerID = newID;
     p.seatRow = row;
     p.seatCol = col;
 
-    cout << "Seat available! Assigned ID: " << p.passengerID << endl;
+    cout << "\nSeat available! Assigned ID: " << p.passengerID << endl;
     cout << "Enter Passenger Name: ";
-    cin.ignore();
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     cin.getline(p.name, 50);
 
     int classChoice;
@@ -135,34 +87,80 @@ void finalizeBooking(Passenger &p, int newID, int row, char col) {
     cout << "Reservation completed successfully.\n";
 }
 
+// --- LINKED LIST IMPLEMENTATION ---
+void loadFromCSV_Linked(const char* filename, Node*& head) {
+    ifstream file(filename);
+    if (!file) return;
+
+    string line;
+    getline(file, line); // Skip header
+
+    bool taken[31][6] = {false};
+    head = nullptr;
+    int loaded = 0;
+
+    while (getline(file, line) && loaded < MAX_PASSENGERS) {
+        char buf[512] = {0};
+        strncpy(buf, line.c_str(), sizeof(buf) - 1);
+
+        char* token = strtok(buf, ",");
+        int id = atoi(token);
+        token = strtok(nullptr, ",");
+        char name[50]; if(token) strncpy(name, token, 49);
+        token = strtok(nullptr, ",");
+        int row = atoi(token);
+        token = strtok(nullptr, ",");
+        char col = (token) ? toupper(token[0]) : ' ';
+        token = strtok(nullptr, ",");
+        char sClass[15]; if(token) strncpy(sClass, token, 14);
+
+        int cIdx = col - 'A';
+        // Collision Detection: Only load if seat is A-F and not already filled
+        if (row >= 1 && row <= 30 && cIdx >= 0 && cIdx < 6 && !taken[row][cIdx]) {
+            taken[row][cIdx] = true;
+            Node* newNode = new Node;
+            newNode->data.passengerID = id;
+            strcpy(newNode->data.name, name);
+            newNode->data.seatRow = row;
+            newNode->data.seatCol = col;
+            strcpy(newNode->data.seatClass, sClass);
+            
+            newNode->next = head;
+            head = newNode;
+            loaded++;
+        }
+    }
+    file.close();
+    cout << "Initialized: " << loaded << " unique seat records loaded (A-F range).\n";
+}
+
 void insertPassenger_Linked(Node*& head) {
-    int row;
-    char col;
-
-    cout << "Enter Seat Row (1-30): "; cin >> row;
-    if (row < 1 || row > 30) { cout << "Invalid row. Back to menu.\n"; return; }
-    
-    cout << "Enter Seat Column (A-F): "; cin >> col;
-    col = toupper(col);
-    if (col < 'A' || col > 'F') { cout << "Invalid column. Back to menu.\n"; return; }
-
-    // 1. Traverse to verify seat status and find max ID
+    bool taken[31][6] = {false};
     int maxID = 0;
     Node* temp = head;
-    while (temp != nullptr) {
-        if (temp->data.seatRow == row && temp->data.seatCol == col) {
-            cout << "Error: Seat " << row << col << " is already reserved!\n";
-            return;
-        }
+    while (temp) {
+        int cIdx = toupper(temp->data.seatCol) - 'A';
+        if (temp->data.seatRow >= 1 && temp->data.seatRow <= 30 && cIdx >= 0 && cIdx < 6)
+            taken[temp->data.seatRow][cIdx] = true;
         if (temp->data.passengerID > maxID) maxID = temp->data.passengerID;
         temp = temp->next;
     }
+    displaySeatingChart(taken);
 
-    // 2. Seat is free: Allocate new node and finalize booking
+    int row; char col;
+    cout << "\nEnter Requested Row (1-30): "; cin >> row;
+    if (row < 1 || row > 30) { cout << "Invalid row.\n"; return; }
+    cout << "Enter Requested Column (A-F): "; cin >> col;
+    col = toupper(col);
+    int cIdx = col - 'A';
+
+    if (cIdx < 0 || cIdx > 5 || taken[row][cIdx]) {
+        cout << "Error: Seat is unavailable or out of A-F range!\n";
+        return;
+    }
+
     Node* newNode = new Node;
     finalizeBooking(newNode->data, maxID + 1, row, col);
-
-    // 3. Link the new node to the list (O(1) insertion at head)
     newNode->next = head;
     head = newNode;
 }
@@ -404,93 +402,72 @@ void runLinkedListBasedSystem() {
     }
 }
 
-// ARRAY-BASED IMPLEMENTATION
-const int MAX_PASSENGERS = 180;  
-
-int loadFromCSV_Array(const char* filename, Passenger arr[], int& count) {
+// --- ARRAY IMPLEMENTATION ---
+void loadFromCSV_Array(const char* filename, Passenger arr[], int& count) {
     ifstream file(filename);
-    if (!file) {
-        cout << "Error: Cannot open file " << filename << endl;
-        return 0;
-    }
+    if (!file) return;
 
     string line;
-    getline(file, line);
-
-    int total = 0;
-    while (getline(file, line)) total++;
-    file.close();
-
-    const int LOAD = 180;
-    int to_load = (total < LOAD) ? total : LOAD;
-
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<int> dist(0, total - to_load);
-
-    int skip = dist(gen);
-
-    file.open(filename);
     getline(file, line); 
-    for (int i = 0; i < skip; ++i) {
-        getline(file, line);
-    }
-
+    
+    bool taken[31][6] = {false};
     count = 0;
-    while (getline(file, line) && count < to_load && count < MAX_PASSENGERS) {
+
+    while (getline(file, line) && count < MAX_PASSENGERS) {
         char buf[512] = {0};
         strncpy(buf, line.c_str(), sizeof(buf) - 1);
 
         char* token = strtok(buf, ",");
-        if (!token) continue;
-        arr[count].passengerID = atoi(token);
-
+        int id = atoi(token);
         token = strtok(nullptr, ",");
-        if (token) strncpy(arr[count].name, token, sizeof(arr[count].name) - 1);
-
+        char name[50]; if(token) strncpy(name, token, 49);
         token = strtok(nullptr, ",");
-        if (token) arr[count].seatRow = atoi(token);
-
+        int row = atoi(token);
         token = strtok(nullptr, ",");
-        if (token) arr[count].seatCol = token[0];
-
+        char col = (token) ? toupper(token[0]) : ' ';
         token = strtok(nullptr, ",");
-        if (token) strncpy(arr[count].seatClass, token, sizeof(arr[count].seatClass) - 1);
+        char sClass[15]; if(token) strncpy(sClass, token, 14);
 
-        count++;
+        int cIdx = col - 'A';
+        if (row >= 1 && row <= 30 && cIdx >= 0 && cIdx < 6 && !taken[row][cIdx]) {
+            taken[row][cIdx] = true;
+            arr[count].passengerID = id;
+            strcpy(arr[count].name, name);
+            arr[count].seatRow = row;
+            arr[count].seatCol = col;
+            strcpy(arr[count].seatClass, sClass);
+            count++;
+        }
     }
     file.close();
-    return count;
+    cout << "Initialized: " << count << " unique seat records loaded (A-F range).\n";
 }
 
 void insertPassenger_Array(Passenger arr[], int& count) {
-    if (count >= MAX_PASSENGERS) {
-        cout << "Error: Flight is at full capacity.\n";
+    if (count >= MAX_PASSENGERS) { cout << "Flight Full.\n"; return; }
+
+    bool taken[31][6] = {false};
+    int maxID = 0;
+    for (int i = 0; i < count; i++) {
+        int cIdx = toupper(arr[i].seatCol) - 'A';
+        if (arr[i].seatRow >= 1 && arr[i].seatRow <= 30 && cIdx >= 0 && cIdx < 6)
+            taken[arr[i].seatRow][cIdx] = true;
+        if (arr[i].passengerID > maxID) maxID = arr[i].passengerID;
+    }
+    displaySeatingChart(taken);
+
+    int row; char col;
+    cout << "\nEnter Requested Row (1-30): "; cin >> row;
+    if (row < 1 || row > 30) return;
+    cout << "Enter Requested Column (A-F): "; cin >> col;
+    col = toupper(col);
+    int cIdx = col - 'A';
+
+    if (cIdx < 0 || cIdx > 5 || taken[row][cIdx]) {
+        cout << "Seat unavailable or invalid.\n";
         return;
     }
 
-    int row;
-    char col;
-
-    // 1. Input Row/Col with validation (1-30, A-F)
-    cout << "Enter Seat Row (1-30): "; cin >> row;
-    if (row < 1 || row > 30) { cout << "Invalid row. Back to menu.\n"; return; }
-    
-    cout << "Enter Seat Column (A-F): "; cin >> col;
-    col = toupper(col);
-    if (col < 'A' || col > 'F') { cout << "Invalid column. Back to menu.\n"; return; }
-
-    // 2. Check occupancy and find max ID for auto-increment
-    int maxID = 0;
-    for (int i = 0; i < count; i++) {
-        if (arr[i].seatRow == row && arr[i].seatCol == col) {
-            cout << "Error: Seat " << row << col << " is already reserved!\n";
-            return; // Exit immediately
-        }
-        if (arr[i].passengerID > maxID) maxID = arr[i].passengerID;
-    }
-
-    // 3. Finalize details only if seat is free
     finalizeBooking(arr[count], maxID + 1, row, col);
     count++;
 }
